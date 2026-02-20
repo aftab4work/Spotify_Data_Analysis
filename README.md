@@ -69,6 +69,186 @@ In advanced stages, the focus shifts to improving query performance. Some optimi
 ## 15 Practice Questions
 
 ### Easy Level
+
+## Spotify Data Analysis SQL Queries
+
+### Basic Level Queries
+
+```sql
+-- Q.1 Retrieve the names of all tracks that have more than 1 billion streams.
+SELECT * FROM spotify
+WHERE stream >= 1000000000;
+```
+
+```sql
+-- Q.2 List all albums along with their respective artists.
+SELECT 
+    DISTINCT album, 
+    artist
+FROM spotify
+ORDER BY 1;
+```
+
+```sql
+-- Q.3 Get the total number of comments for tracks where licensed = TRUE.
+SELECT 
+    SUM(comments) AS total_comments
+FROM spotify
+WHERE licensed = 'true';
+```
+
+```sql
+-- Q.4 Find all tracks that belong to the album type single.
+SELECT
+    track
+FROM spotify
+WHERE album_type = 'single';
+```
+
+```sql
+-- Q.5 Count the total number of tracks by each artist.
+SELECT
+    DISTINCT artist,
+    COUNT(track) AS total_numbers_of_track
+FROM spotify
+GROUP BY artist;
+```
+
+### Intermediate Level Queries
+
+```sql
+-- Q.6 Calculate the average danceability of tracks in each album.
+SELECT 
+    album, 
+    AVG(danceability) AS avg_danceability
+FROM spotify
+GROUP BY 1
+ORDER BY 2 DESC;
+```
+
+```sql
+-- Q.7 Find the top 5 tracks with the highest energy values.
+SELECT
+    track,
+    energy
+FROM spotify
+ORDER BY 2 DESC
+LIMIT 5;
+```
+
+```sql
+-- Q.8 List all tracks along with their views and likes where official_video = TRUE.
+SELECT 
+    track, 
+    SUM(views) as total_views,
+    SUM(likes) as total_likes
+FROM spotify
+WHERE official_video = 'true'
+GROUP BY 1
+ORDER BY 2 DESC;
+```
+
+```sql
+-- Q.9 For each album, calculate the total views of all associated tracks.
+SELECT
+    album,
+    track,
+    SUM(views) AS total_views
+FROM spotify
+GROUP BY 1, 2
+ORDER BY 3 DESC;
+```
+
+```sql
+-- Q.10 Retrieve the track names that have been streamed on Spotify more than YouTube.
+SELECT * FROM (
+    SELECT
+        track,
+        COALESCE(SUM(CASE WHEN most_played_on = 'Youtube' THEN stream END),0) as streamed_on_youtube,
+        COALESCE(SUM(CASE WHEN most_played_on = 'Spotify' THEN stream END),0) as streamed_on_spotify
+    FROM spotify
+    GROUP BY 1
+) AS t1
+WHERE streamed_on_youtube < streamed_on_spotify
+AND streamed_on_youtube <> 0;
+```
+
+### Advanced Level Queries
+
+```sql
+-- Q.11 Find the top 3 most-viewed tracks for each artist using window functions.
+WITH view_rank AS (
+    SELECT 
+        artist,
+        views,
+        ROW_NUMBER() OVER (PARTITION BY artist ORDER BY views DESC) as artist_most_viewed
+    FROM spotify
+)
+SELECT 
+    artist,
+    views,
+    artist_most_viewed
+FROM view_rank
+WHERE artist_most_viewed <= 3;
+```
+
+```sql
+-- Q.12 Write a query to find tracks where the liveness score is above the average.
+SELECT
+    track, 
+    artist,
+    liveness
+FROM spotify
+WHERE liveness > (SELECT AVG(liveness) FROM spotify);
+```
+
+```sql
+-- Q.13 Use a WITH clause to calculate the difference between the highest and lowest
+--      energy values for tracks in each album.
+WITH energy_difference AS (
+    SELECT 
+        album,
+        max(energy):: numeric AS highest_energy, 
+        min(energy):: numeric AS lowest_energy
+    FROM spotify
+    GROUP BY album
+)
+SELECT
+    album, 
+    ROUND(highest_energy - lowest_energy, 2) AS energy_dif
+FROM energy_difference;
+```
+
+```sql
+-- Q.14 Find tracks where the energy-to-liveness ratio is greater than 1.2.
+SELECT
+    track,
+    ROUND((energy/liveness) :: Numeric, 2) AS energy_to_liveness
+FROM spotify
+WHERE energy/liveness > 1.2
+ORDER BY 2 DESC;
+```
+
+```sql
+-- Q.15 Calculate the cumulative sum of likes for tracks ordered by the number of views, using window functions.
+WITH track_stats AS (
+    SELECT 
+        track,
+        SUM(views) AS total_views,
+        SUM(likes) AS total_likes
+    FROM spotify
+    GROUP BY track
+)
+SELECT 
+    track,
+    total_views,
+    total_likes,
+    SUM(total_likes) OVER (ORDER BY total_views DESC) AS cumulative_likes
+FROM track_stats
+ORDER BY total_views DESC;
+```
+
+
 1. Retrieve the names of all tracks that have more than 1 billion streams.
 
 ```sql
